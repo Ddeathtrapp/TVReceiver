@@ -1,0 +1,28 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.mirror.tvreceiver.app-mergeDebugResources-21:/values-v19/values-v19.xml",
+            "map": [
+                {
+                    "source": "/home/deathtrap/.gradle/caches/transforms-3/b9a3f4615a8cac832b7653279e6657f3/transformed/leanback-1.1.0-rc01/res/values-v19/values-v19.xml",
+                    "from": {
+                        "startLines": "2,16",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,917",
+                        "endLines": "15,24",
+                        "endColumns": "12,12",
+                        "endOffsets": "912,1521"
+                    },
+                    "to": {
+                        "startLines": "2,16",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,871",
+                        "endLines": "15,24",
+                        "endColumns": "12,12",
+                        "endOffsets": "866,1475"
+                    }
+                }
+            ]
+        }
+    ]
+}

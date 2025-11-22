@@ -1,0 +1,38 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.mirror.tvreceiver.app-mergeDebugResources-21:/values-v18/values-v18.xml",
+            "map": [
+                {
+                    "source": "/home/deathtrap/.gradle/caches/transforms-3/b9a3f4615a8cac832b7653279e6657f3/transformed/leanback-1.1.0-rc01/res/values-v18/values-v18.xml",
+                    "from": {
+                        "startLines": "2,11",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,664",
+                        "endLines": "10,19",
+                        "endColumns": "12,12",
+                        "endOffsets": "659,1251"
+                    },
+                    "to": {
+                        "startLines": "3,12",
+                        "startColumns": "4,4",
+                        "startOffsets": "104,713",
+                        "endLines": "11,20",
+                        "endColumns": "12,12",
+                        "endOffsets": "708,1300"
+                    }
+                },
+                {
+                    "source": "/home/deathtrap/.gradle/caches/transforms-3/2303021cb7f3f78c4bc1b8231e5ae854/transformed/appcompat-1.6.1/res/values-v18/values-v18.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "48",
+                        "endOffsets": "99"
+                    }
+                }
+            ]
+        }
+    ]
+}
