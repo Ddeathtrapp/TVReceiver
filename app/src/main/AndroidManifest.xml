@@ -2,38 +2,36 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.mirror.tvreceiver">
 
-    <!-- TV flavor: leanback is required -->
     <uses-feature
         android:name="android.software.leanback"
         android:required="true" />
 
-    <!-- TV has no touchscreen but some remotes emulate touch -->
     <uses-feature
         android:name="android.hardware.touchscreen"
         android:required="false" />
 
     <application
         android:allowBackup="true"
-        android:banner="@drawable/app_banner"
-        android:icon="@mipmap/ic_launcher"
         android:label="TV Receiver"
-        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:usesCleartextTraffic="true">
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:banner="@drawable/app_banner"
             android:label="TV Receiver"
             android:launchMode="singleTask">
 
-            <!-- Must use Leanback launcher for Android TV -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
 
+        </activity>
+
+    </application>
+
+</manifest>
         </activity>
 
     </application>
