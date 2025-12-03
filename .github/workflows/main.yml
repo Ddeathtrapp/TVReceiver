@@ -1,8 +1,8 @@
-name: Android TV Build
+name: Build TVReceiver APKs
 
 on:
   push:
-    branches: [ master ]
+    branches: [ "main", "master" ]
   workflow_dispatch:
 
 jobs:
@@ -10,29 +10,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Check out code
+      uses: actions/checkout@v3
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '17'
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
 
-      - name: Install Android SDK
-        uses: android-actions/setup-android@v3
+    - name: Make Gradle wrapper executable
+      run: chmod +x ./gradlew
 
-      - name: Install required build tools
-        run: sdkmanager "build-tools;34.0.0" "platforms;android-34"
+    - name: Build Chromebook Debug APK
+      run: ./gradlew assembleChromebookDebug --stacktrace
 
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
+    - name: Build TV Debug APK
+      run: ./gradlew assembleTvDebug --stacktrace
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: TVReceiver-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+    - name: Upload built APKs
+      uses: actions/upload-artifact@v3
+      with:
+        name: built-apks
+        path: |
+          app/build/outputs/apk/chromebook/debug/*.apk
+          app/build/outputs/apk/tv/debug/*.apk
