@@ -10,7 +10,7 @@ import org.json.JSONObject
 class WebRTCClient(
     private val context: Context,
     private val renderer: SurfaceViewRenderer,
-    private val signalingUrl: String,
+    private val signalingUrl: "ws://192.168.0.41",
     private val debug: (String) -> Unit,
     private val tvId: String = "tv-1",      // required by your server
     private val tvName: String = "AndroidTV" // optional name
