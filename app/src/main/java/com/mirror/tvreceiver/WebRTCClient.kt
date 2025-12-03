@@ -11,7 +11,9 @@ class WebRTCClient(
     private val context: Context,
     private val renderer: SurfaceViewRenderer,
     private val signalingUrl: String,
-    private val debug: (String) -> Unit
+    private val debug: (String) -> Unit,
+    private val tvId: String = "tv-1",      // required by your server
+    private val tvName: String = "AndroidTV" // optional name
 ) {
 
     private lateinit var peerConnectionFactory: PeerConnectionFactory
@@ -21,7 +23,7 @@ class WebRTCClient(
     private var ws: WebSocketClient? = null
 
     fun init() {
-        debug("WebRTC init")
+        debug("WebRTC init…")
 
         PeerConnectionFactory.initialize(
             PeerConnectionFactory.InitializationOptions.builder(context)
@@ -29,13 +31,9 @@ class WebRTCClient(
                 .createInitializationOptions()
         )
 
-        val options = PeerConnectionFactory.Options().apply {
-            disableEncryption = false
-            disableNetworkMonitor = false
-        }
-
+        val options = PeerConnectionFactory.Options()
         val encoderFactory = DefaultVideoEncoderFactory(
-            eglBase.eglBaseContext, /* enableIntelVp8Encoder */ true, /* enableH264HighProfile */ true
+            eglBase.eglBaseContext, true, true
         )
         val decoderFactory = DefaultVideoDecoderFactory(eglBase.eglBaseContext)
 
@@ -56,8 +54,23 @@ class WebRTCClient(
         debug("Connecting WebSocket: $signalingUrl")
 
         ws = object : WebSocketClient(URI(signalingUrl)) {
+
             override fun onOpen(handshakedata: ServerHandshake?) {
                 debug("WS connected")
+
+                // REQUIRED by your signaling server
+                val identify = JSONObject()
+                identify.put("type", "identify")
+                identify.put("from", "tv")
+
+                val payload = JSONObject()
+                payload.put("tvId", tvId)
+                payload.put("name", tvName)
+
+                identify.put("payload", payload)
+
+                send(identify.toString())
+                debug("Sent identify → tvId=$tvId")
             }
 
             override fun onMessage(message: String?) {
@@ -66,8 +79,11 @@ class WebRTCClient(
 
                 val json = JSONObject(message)
                 when (json.optString("type")) {
+                    "ping" -> handlePing(json)
                     "offer" -> handleOffer(json.getString("sdp"))
                     "candidate" -> handleRemoteIce(json)
+                    "identified" -> debug("Server acknowledged TV identify.")
+                    "peer-status" -> debug("Peer status: ${json.optString("status")}")
                 }
             }
 
@@ -79,78 +95,87 @@ class WebRTCClient(
                 debug("WS error: ${ex?.message}")
             }
         }
+
         ws?.connect()
+    }
+
+    private fun handlePing(json: JSONObject) {
+        // respond for heartbeat
+        val pong = JSONObject()
+        pong.put("type", "pong")
+        ws?.send(pong.toString())
     }
 
     private fun handleOffer(sdp: String) {
         debug("Received OFFER")
 
-        val rtcConfig = PeerConnection.RTCConfiguration(emptyList()).apply {
+        val config = PeerConnection.RTCConfiguration(emptyList()).apply {
             sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
         }
 
-        peerConnection = peerConnectionFactory.createPeerConnection(rtcConfig, object : PeerConnection.Observer {
+        peerConnection = peerConnectionFactory.createPeerConnection(
+            config,
+            object : PeerConnection.Observer {
 
-            override fun onIceCandidate(candidate: IceCandidate?) {
-                if (candidate != null) {
-                    val msg = JSONObject()
-                    msg.put("type", "candidate")
-                    msg.put("sdpMid", candidate.sdpMid)
-                    msg.put("sdpMLineIndex", candidate.sdpMLineIndex)
-                    msg.put("candidate", candidate.sdp)
-                    ws?.send(msg.toString())
+                override fun onTrack(transceiver: RtpTransceiver?) {
+                    val track = transceiver?.receiver?.track()
+                    if (track is VideoTrack) {
+                        debug("Remote video track received")
+                        track.addSink(renderer)
+                    }
                 }
-            }
 
-            override fun onTrack(transceiver: RtpTransceiver?) {
-                debug("onTrack: Remote stream added")
-                val track = transceiver?.receiver?.track()
-                if (track is VideoTrack) {
-                    track.addSink(renderer)
+                override fun onIceCandidate(candidate: IceCandidate?) {
+                    if (candidate != null) {
+                        val msg = JSONObject()
+                        msg.put("type", "candidate")
+                        msg.put("sdpMid", candidate.sdpMid)
+                        msg.put("sdpMLineIndex", candidate.sdpMLineIndex)
+                        msg.put("candidate", candidate.sdp)
+                        ws?.send(msg.toString())
+                    }
                 }
+
+                override fun onIceConnectionChange(newState: PeerConnection.IceConnectionState?) {
+                    debug("ICE state = $newState")
+                }
+
+                override fun onConnectionChange(newState: PeerConnection.PeerConnectionState?) {
+                    debug("PC state = $newState")
+                }
+
+                override fun onSignalingChange(p0: PeerConnection.SignalingState?) {}
+                override fun onIceGatheringChange(p0: PeerConnection.IceGatheringState?) {}
+                override fun onAddStream(p0: MediaStream?) {}
+                override fun onRemoveStream(p0: MediaStream?) {}
+                override fun onDataChannel(dc: DataChannel?) {}
+                override fun onStandardizedIceConnectionChange(p0: PeerConnection.IceConnectionState?) {}
+                override fun onRenegotiationNeeded() {}
             }
-
-            override fun onAddStream(stream: MediaStream?) {}
-
-            override fun onIceConnectionChange(newState: PeerConnection.IceConnectionState?) {
-                debug("ICE state: $newState")
-            }
-
-            override fun onConnectionChange(newState: PeerConnection.PeerConnectionState?) {
-                debug("PC state: $newState")
-            }
-
-            override fun onDataChannel(dc: DataChannel?) {}
-            override fun onIceGatheringChange(p0: PeerConnection.IceGatheringState?) {}
-            override fun onRemoveStream(p0: MediaStream?) {}
-            override fun onSignalingChange(p0: PeerConnection.SignalingState?) {}
-            override fun onStandardizedIceConnectionChange(p0: PeerConnection.IceConnectionState?) {}
-            override fun onRenegotiationNeeded() {}
-        })
+        )
 
         val offerDesc = SessionDescription(SessionDescription.Type.OFFER, sdp)
-        peerConnection?.setRemoteDescription(
-            object : SdpObserverAdapter() {
-                override fun onSetSuccess() {
-                    debug("Remote offer set. Creating answer…")
-                    createAnswer()
-                }
-            }, offerDesc
-        )
+        peerConnection?.setRemoteDescription(object : SdpObserverAdapter() {
+            override fun onSetSuccess() {
+                debug("Remote offer set. Creating answer…")
+                createAnswer()
+            }
+        }, offerDesc)
     }
 
     private fun createAnswer() {
         peerConnection?.createAnswer(object : SdpObserverAdapter() {
             override fun onCreateSuccess(desc: SessionDescription?) {
                 if (desc == null) return
-                debug("Answer created")
 
                 peerConnection?.setLocalDescription(object : SdpObserverAdapter() {}, desc)
 
                 val msg = JSONObject()
                 msg.put("type", "answer")
                 msg.put("sdp", desc.description)
+
                 ws?.send(msg.toString())
+                debug("Answer sent")
             }
         }, MediaConstraints())
     }
