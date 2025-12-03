@@ -13,8 +13,17 @@ android {
         targetSdk 34
         versionCode 1
         versionName "1.0"
+    }
 
-        // Required for TV devices
+    // ADD THESE LINES — THIS IS WHAT WAS MISSING
+    flavorDimensions "deviceType"
+    productFlavors {
+        tv {
+            dimension "deviceType"
+        }
+        chromebook {
+            dimension "deviceType"
+        }
     }
 
     buildTypes {
@@ -34,6 +43,13 @@ android {
     }
 }
 
+dependencies {
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+
+    // Leanback only in TV flavor
+    tvImplementation 'androidx.leanback:leanback:1.1.0-rc01'
+}
 dependencies {
     implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
