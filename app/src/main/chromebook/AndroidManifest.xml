@@ -3,13 +3,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.mirror.tvreceiver">
 
-    <!-- Chromebook should NOT require Leanback -->
     <uses-feature
         android:name="android.software.leanback"
         android:required="false"
         tools:node="replace" />
 
-    <application tools:replace="android:banner" android:banner="@null">
+    <application tools:node="replace">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -17,7 +16,6 @@
             android:launchMode="singleTask"
             tools:node="replace">
 
-            <!-- Chromebook uses a normal launcher icon, not Leanback launcher -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
